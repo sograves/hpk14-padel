@@ -58,10 +58,15 @@ async function getActivities(context) {
     // Sort by date (upcoming first)
     activities.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+    // Filter to only show future activities (or activities from today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcomingActivities = activities.filter(a => new Date(a.date) >= today);
+
     context.res = {
         status: 200,
         headers: { "Content-Type": "application/json" },
-        body: activities
+        body: upcomingActivities
     };
 }
 
