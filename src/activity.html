@@ -48,9 +48,12 @@
                 <p id="activity-max" class="text-gray-700 mb-2 hidden">
                     <span class="font-medium">Maks deltagere:</span> <span id="max-value"></span>
                 </p>
-                <p id="activity-description" class="text-gray-700 hidden">
+                <p id="activity-description" class="text-gray-700 mb-4 hidden">
                     <span class="font-medium">Beskrivelse:</span> <span id="description-value"></span>
                 </p>
+                <button onclick="addToCalendar()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm font-medium py-2 px-4 rounded-lg transition">
+                    Tilføj til kalender
+                </button>
             </div>
 
             <!-- Signup form -->
@@ -329,6 +332,46 @@
             } catch (error) {
                 alert('Kunne ikke slette aktivitet. Prøv igen.');
             }
+        }
+
+        function addToCalendar() {
+            const activity = currentActivity;
+            const startDate = new Date(activity.date);
+            const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours duration
+
+            const formatICSDate = (date) => {
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+
+            const escapeICS = (text) => {
+                return text ? text.replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n') : '';
+            };
+
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//HPK 14//Padel//DA',
+                'BEGIN:VEVENT',
+                `UID:${activity.id}@hpk14.dk`,
+                `DTSTAMP:${formatICSDate(new Date())}`,
+                `DTSTART:${formatICSDate(startDate)}`,
+                `DTEND:${formatICSDate(endDate)}`,
+                `SUMMARY:${escapeICS(activity.name)} - HPK 14`,
+                `LOCATION:${escapeICS(activity.location)}`,
+                activity.description ? `DESCRIPTION:${escapeICS(activity.description)}` : '',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].filter(line => line).join('\r\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${activity.name.replace(/[^a-zA-Z0-9æøåÆØÅ ]/g, '')}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
