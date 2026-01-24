@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aktivitet - HPK 14</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <a href="index.html" class="text-blue-200 hover:text-white text-sm">&larr; Tilbage til aktiviteter</a>
+            <h1 id="activity-name" class="text-3xl font-bold mt-2">Henter...</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+
+        <div id="not-found" class="hidden text-center py-12">
+            <p class="text-gray-500 text-lg">Aktivitet ikke fundet</p>
+            <a href="index.html" class="text-blue-600 hover:underline">Tilbage til forsiden</a>
+        </div>
+
+        <div id="activity-content" class="hidden max-w-2xl mx-auto">
+            <!-- Activity details -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span id="activity-type" class="inline-block px-3 py-1 text-sm font-semibold rounded"></span>
+                    <span id="activity-date" class="text-gray-600"></span>
+                </div>
+                <p class="text-gray-700 mb-2">
+                    <span class="font-medium">Sted:</span> <span id="activity-location"></span>
+                </p>
+                <p id="activity-max" class="text-gray-700 mb-2 hidden">
+                    <span class="font-medium">Maks deltagere:</span> <span id="max-value"></span>
+                </p>
+                <p id="activity-description" class="text-gray-700 hidden">
+                    <span class="font-medium">Beskrivelse:</span> <span id="description-value"></span>
+                </p>
+            </div>
+
+            <!-- Signup form -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Tilmeld dig</h2>
+                <form id="signup-form" class="flex gap-3">
+                    <input type="text" id="signup-name" required
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Dit navn">
+                    <button type="submit" id="signup-btn"
+                        class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                        Tilmeld
+                    </button>
+                </form>
+                <p id="signup-error" class="hidden text-red-600 text-sm mt-2"></p>
+                <p id="signup-full" class="hidden text-orange-600 text-sm mt-2">Aktiviteten er fuld</p>
+            </div>
+
+            <!-- Signups list -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    Tilmeldte (<span id="signup-count">0</span>)
+                </h2>
+                <div id="no-signups" class="text-gray-500">Ingen tilmeldte endnu</div>
+                <ul id="signups-list" class="space-y-2 hidden"></ul>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        let currentActivity = null;
+
+        document.addEventListener('DOMContentLoaded', loadActivity);
+
+        async function loadActivity() {
+            const params = new URLSearchParams(window.location.search);
+            const activityId = params.get('id');
+
+            if (!activityId) {
+                showNotFound();
+                return;
+            }
+
+            try {
+                const data = await api.getActivity(activityId);
+                currentActivity = data.activity;
+                renderActivity(data.activity, data.signups);
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                showNotFound();
+            }
+        }
+
+        function showNotFound() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('not-found').classList.remove('hidden');
+        }
+
+        function renderActivity(activity, signups) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('activity-content').classList.remove('hidden');
+
+            document.getElementById('activity-name').textContent = activity.name;
+            document.title = `${activity.name} - HPK 14`;
+
+            const typeEl = document.getElementById('activity-type');
+            typeEl.textContent = getTypeLabel(activity.type);
+            typeEl.className = `inline-block px-3 py-1 text-sm font-semibold rounded ${getTypeColor(activity.type)}`;
+
+            document.getElementById('activity-date').textContent = formatDate(activity.date);
+            document.getElementById('activity-location').textContent = activity.location;
+
+            if (activity.maxParticipants) {
+                document.getElementById('activity-max').classList.remove('hidden');
+                document.getElementById('max-value').textContent = activity.maxParticipants;
+            }
+
+            if (activity.description) {
+                document.getElementById('activity-description').classList.remove('hidden');
+                document.getElementById('description-value').textContent = activity.description;
+            }
+
+            renderSignups(signups, activity.maxParticipants);
+        }
+
+        function renderSignups(signups, maxParticipants) {
+            const countEl = document.getElementById('signup-count');
+            const noSignups = document.getElementById('no-signups');
+            const signupsList = document.getElementById('signups-list');
+            const signupFull = document.getElementById('signup-full');
+            const signupForm = document.getElementById('signup-form');
+
+            countEl.textContent = signups.length;
+
+            if (maxParticipants && signups.length >= parseInt(maxParticipants)) {
+                signupFull.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+            }
+
+            if (signups.length === 0) {
+                noSignups.classList.remove('hidden');
+                signupsList.classList.add('hidden');
+                return;
+            }
+
+            noSignups.classList.add('hidden');
+            signupsList.classList.remove('hidden');
+            signupsList.innerHTML = signups.map(signup => `
+                <li class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="font-medium">${escapeHtml(signup.name)}</span>
+                    <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
+                        class="text-red-600 hover:text-red-800 text-sm">
+                        Afmeld
+                    </button>
+                </li>
+            `).join('');
+        }
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nameInput = document.getElementById('signup-name');
+            const submitBtn = document.getElementById('signup-btn');
+            const errorEl = document.getElementById('signup-error');
+
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Tilmelder...';
+            errorEl.classList.add('hidden');
+
+            try {
+                await api.signup(currentActivity.id, name);
+                nameInput.value = '';
+                await loadActivity(); // Reload to show updated list
+            } catch (error) {
+                errorEl.textContent = 'Kunne ikke tilmelde. Prøv igen.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Tilmeld';
+            }
+        });
+
+        async function removeSignup(signupId, name) {
+            if (!confirm(`Er du sikker på, at du vil afmelde ${name}?`)) {
+                return;
+            }
+
+            try {
+                await api.removeSignup(currentActivity.id, signupId);
+                await loadActivity(); // Reload to show updated list
+            } catch (error) {
+                alert('Kunne ikke afmelde. Prøv igen.');
+            }
+        }
+    </script>
+</body>
+</html>

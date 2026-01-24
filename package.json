@@ -1,0 +1,15 @@
+{
+  "name": "hpk14-padel",
+  "version": "1.0.0",
+  "description": "HPK 14 Padel Team Website",
+  "scripts": {
+    "start": "swa start src --api-location api",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2"
+  },
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "^1.1.6"
+  }
+}
