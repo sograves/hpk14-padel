@@ -28,9 +28,19 @@
         <div id="activity-content" class="hidden max-w-2xl mx-auto">
             <!-- Activity details -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <span id="activity-type" class="inline-block px-3 py-1 text-sm font-semibold rounded"></span>
-                    <span id="activity-date" class="text-gray-600"></span>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span id="activity-type" class="inline-block px-3 py-1 text-sm font-semibold rounded"></span>
+                        <span id="activity-date" class="text-gray-600"></span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openEditModal()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Rediger
+                        </button>
+                        <button onclick="deleteActivity()" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                            Slet
+                        </button>
+                    </div>
                 </div>
                 <p class="text-gray-700 mb-2">
                     <span class="font-medium">Sted:</span> <span id="activity-location"></span>
@@ -66,6 +76,66 @@
                 </h2>
                 <div id="no-signups" class="text-gray-500">Ingen tilmeldte endnu</div>
                 <ul id="signups-list" class="space-y-2 hidden"></ul>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Rediger aktivitet</h2>
+                        <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+                    </div>
+                    <form id="edit-form" class="space-y-4">
+                        <div>
+                            <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">Aktivitetsnavn *</label>
+                            <input type="text" id="edit-name" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-type" class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                            <select id="edit-type" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="training">Træning</option>
+                                <option value="match">Kamp</option>
+                                <option value="social">Social</option>
+                                <option value="other">Andet</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-1">Dato og tid *</label>
+                            <input type="datetime-local" id="edit-date" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-location" class="block text-sm font-medium text-gray-700 mb-1">Sted *</label>
+                            <input type="text" id="edit-location" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-maxParticipants" class="block text-sm font-medium text-gray-700 mb-1">Maks deltagere</label>
+                            <input type="number" id="edit-maxParticipants" min="1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-description" class="block text-sm font-medium text-gray-700 mb-1">Beskrivelse</label>
+                            <textarea id="edit-description" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        <div id="edit-error" class="hidden text-red-600 text-sm"></div>
+                        <div class="flex gap-3">
+                            <button type="button" onclick="closeEditModal()"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition">
+                                Annuller
+                            </button>
+                            <button type="submit" id="edit-submit-btn"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                                Gem ændringer
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </main>
@@ -197,6 +267,67 @@
                 await loadActivity(); // Reload to show updated list
             } catch (error) {
                 alert('Kunne ikke afmelde. Prøv igen.');
+            }
+        }
+
+        function openEditModal() {
+            const modal = document.getElementById('edit-modal');
+            document.getElementById('edit-name').value = currentActivity.name;
+            document.getElementById('edit-type').value = currentActivity.type;
+            document.getElementById('edit-date').value = currentActivity.date;
+            document.getElementById('edit-location').value = currentActivity.location;
+            document.getElementById('edit-maxParticipants').value = currentActivity.maxParticipants || '';
+            document.getElementById('edit-description').value = currentActivity.description || '';
+            document.getElementById('edit-error').classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('edit-submit-btn');
+            const errorEl = document.getElementById('edit-error');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Gemmer...';
+            errorEl.classList.add('hidden');
+
+            const formData = {
+                name: document.getElementById('edit-name').value,
+                type: document.getElementById('edit-type').value,
+                date: document.getElementById('edit-date').value,
+                location: document.getElementById('edit-location').value,
+                maxParticipants: document.getElementById('edit-maxParticipants').value || null,
+                description: document.getElementById('edit-description').value || null
+            };
+
+            try {
+                await api.updateActivity(currentActivity.id, formData);
+                closeEditModal();
+                await loadActivity();
+            } catch (error) {
+                errorEl.textContent = 'Kunne ikke gemme ændringer. Prøv igen.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Gem ændringer';
+            }
+        });
+
+        async function deleteActivity() {
+            if (!confirm('Er du sikker på, at du vil slette denne aktivitet? Alle tilmeldinger vil også blive slettet.')) {
+                return;
+            }
+
+            try {
+                await api.deleteActivity(currentActivity.id);
+                window.location.href = 'index.html';
+            } catch (error) {
+                alert('Kunne ikke slette aktivitet. Prøv igen.');
             }
         }
     </script>

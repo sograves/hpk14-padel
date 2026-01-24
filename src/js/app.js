@@ -42,6 +42,24 @@ const api = {
         });
         if (!response.ok) throw new Error('Failed to remove signup');
         return response.json();
+    },
+
+    async updateActivity(id, data) {
+        const response = await fetch(`/api/activity?id=${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to update activity');
+        return response.json();
+    },
+
+    async deleteActivity(id) {
+        const response = await fetch(`/api/activity?id=${encodeURIComponent(id)}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete activity');
+        return response.json();
     }
 };
 
