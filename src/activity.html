@@ -56,15 +56,15 @@
                 </button>
             </div>
 
-            <!-- Signup/Unsignup forms -->
+            <!-- Response forms -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <div class="grid md:grid-cols-2 gap-6">
-                    <!-- Tilmeld -->
+                    <!-- Kan spille -->
                     <div>
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Tilmeld</h2>
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">Jeg kan spille</h2>
                         <form id="signup-form" class="flex gap-3">
                             <input type="text" id="signup-name" required
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 placeholder="Dit navn">
                             <button type="submit" id="signup-btn"
                                 class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition">
@@ -74,30 +74,41 @@
                         <p id="signup-error" class="hidden text-red-600 text-sm mt-2"></p>
                         <p id="signup-full" class="hidden text-orange-600 text-sm mt-2">Aktiviteten er fuld</p>
                     </div>
-                    <!-- Afmeld -->
+                    <!-- Kan ikke spille -->
                     <div>
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Afmeld</h2>
-                        <form id="unsignup-form" class="flex gap-3">
-                            <input type="text" id="unsignup-name" required
+                        <h2 class="text-xl font-semibold text-red-700 mb-4">Jeg kan ikke spille</h2>
+                        <form id="unavailable-form" class="flex gap-3">
+                            <input type="text" id="unavailable-name" required
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                                 placeholder="Dit navn">
-                            <button type="submit" id="unsignup-btn"
+                            <button type="submit" id="unavailable-btn"
                                 class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition">
                                 Afmeld
                             </button>
                         </form>
-                        <p id="unsignup-error" class="hidden text-red-600 text-sm mt-2"></p>
+                        <p id="unavailable-error" class="hidden text-red-600 text-sm mt-2"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Signups list -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                    Tilmeldte (<span id="signup-count">0</span>)
-                </h2>
-                <div id="no-signups" class="text-gray-500">Ingen tilmeldte endnu</div>
-                <ul id="signups-list" class="space-y-2 hidden"></ul>
+            <!-- Response lists -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Kan spille list -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-green-700 mb-4">
+                        Kan spille (<span id="signup-count">0</span>)
+                    </h2>
+                    <div id="no-signups" class="text-gray-500">Ingen endnu</div>
+                    <ul id="signups-list" class="space-y-2 hidden"></ul>
+                </div>
+                <!-- Kan ikke spille list -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-red-700 mb-4">
+                        Kan ikke spille (<span id="unavailable-count">0</span>)
+                    </h2>
+                    <div id="no-unavailable" class="text-gray-500">Ingen endnu</div>
+                    <ul id="unavailable-list" class="space-y-2 hidden"></ul>
+                </div>
             </div>
         </div>
 
@@ -180,7 +191,7 @@
             try {
                 const data = await api.getActivity(activityId);
                 currentActivity = data.activity;
-                renderActivity(data.activity, data.signups);
+                renderActivity(data.activity, data.signups, data.unavailable);
             } catch (error) {
                 console.error('Error loading activity:', error);
                 showNotFound();
@@ -192,7 +203,7 @@
             document.getElementById('not-found').classList.remove('hidden');
         }
 
-        function renderActivity(activity, signups) {
+        function renderActivity(activity, signups, unavailable) {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('activity-content').classList.remove('hidden');
 
@@ -217,6 +228,7 @@
             }
 
             renderSignups(signups, activity.maxParticipants);
+            renderUnavailable(unavailable);
         }
 
         function renderSignups(signups, maxParticipants) {
@@ -245,8 +257,8 @@
                 <li class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span class="font-medium">${escapeHtml(signup.name)}</span>
                     <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
-                        class="text-red-600 hover:text-red-800 text-sm">
-                        Afmeld
+                        class="text-gray-600 hover:text-gray-800 text-sm">
+                        Fjern
                     </button>
                 </li>
             `).join('');
@@ -279,34 +291,50 @@
             }
         });
 
-        document.getElementById('unsignup-form').addEventListener('submit', async (e) => {
+        function renderUnavailable(unavailable) {
+            const countEl = document.getElementById('unavailable-count');
+            const noUnavailable = document.getElementById('no-unavailable');
+            const unavailableList = document.getElementById('unavailable-list');
+
+            countEl.textContent = unavailable.length;
+
+            if (unavailable.length === 0) {
+                noUnavailable.classList.remove('hidden');
+                unavailableList.classList.add('hidden');
+                return;
+            }
+
+            noUnavailable.classList.add('hidden');
+            unavailableList.classList.remove('hidden');
+            unavailableList.innerHTML = unavailable.map(item => `
+                <li class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="font-medium">${escapeHtml(item.name)}</span>
+                    <button onclick="removeUnavailable('${item.id}', '${escapeHtml(item.name)}')"
+                        class="text-gray-600 hover:text-gray-800 text-sm">
+                        Fjern
+                    </button>
+                </li>
+            `).join('');
+        }
+
+        document.getElementById('unavailable-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const nameInput = document.getElementById('unsignup-name');
-            const submitBtn = document.getElementById('unsignup-btn');
-            const errorEl = document.getElementById('unsignup-error');
+            const nameInput = document.getElementById('unavailable-name');
+            const submitBtn = document.getElementById('unavailable-btn');
+            const errorEl = document.getElementById('unavailable-error');
 
             const name = nameInput.value.trim();
             if (!name) return;
-
-            // Find signup by name (case-insensitive)
-            const data = await api.getActivity(currentActivity.id);
-            const signup = data.signups.find(s => s.name.toLowerCase() === name.toLowerCase());
-
-            if (!signup) {
-                errorEl.textContent = 'Navnet blev ikke fundet på listen.';
-                errorEl.classList.remove('hidden');
-                return;
-            }
 
             submitBtn.disabled = true;
             submitBtn.textContent = 'Afmelder...';
             errorEl.classList.add('hidden');
 
             try {
-                await api.removeSignup(currentActivity.id, signup.id);
+                await api.markUnavailable(currentActivity.id, name);
                 nameInput.value = '';
-                await loadActivity(); // Reload to show updated list
+                await loadActivity();
             } catch (error) {
                 errorEl.textContent = 'Kunne ikke afmelde. Prøv igen.';
                 errorEl.classList.remove('hidden');
@@ -316,16 +344,29 @@
             }
         });
 
+        async function removeUnavailable(unavailableId, name) {
+            if (!confirm(`Er du sikker på, at du vil fjerne ${name} fra listen?`)) {
+                return;
+            }
+
+            try {
+                await api.removeUnavailable(currentActivity.id, unavailableId);
+                await loadActivity();
+            } catch (error) {
+                alert('Kunne ikke fjerne fra listen. Prøv igen.');
+            }
+        }
+
         async function removeSignup(signupId, name) {
-            if (!confirm(`Er du sikker på, at du vil afmelde ${name}?`)) {
+            if (!confirm(`Er du sikker på, at du vil fjerne ${name} fra listen?`)) {
                 return;
             }
 
             try {
                 await api.removeSignup(currentActivity.id, signupId);
-                await loadActivity(); // Reload to show updated list
+                await loadActivity();
             } catch (error) {
-                alert('Kunne ikke afmelde. Prøv igen.');
+                alert('Kunne ikke fjerne fra listen. Prøv igen.');
             }
         }
 

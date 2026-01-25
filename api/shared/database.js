@@ -6,6 +6,7 @@ const accountKey = process.env.AZURE_STORAGE_KEY;
 
 let activitiesClient = null;
 let signupsClient = null;
+let unavailableClient = null;
 
 function getActivitiesClient() {
     if (!activitiesClient) {
@@ -31,6 +32,18 @@ function getSignupsClient() {
     return signupsClient;
 }
 
+function getUnavailableClient() {
+    if (!unavailableClient) {
+        if (!accountName || !accountKey) {
+            throw new Error("Azure Storage credentials not configured");
+        }
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const url = `https://${accountName}.table.core.windows.net`;
+        unavailableClient = new TableClient(url, "unavailable", credential);
+    }
+    return unavailableClient;
+}
+
 // Initialize tables (create if not exists)
 async function initializeTables() {
     try {
@@ -43,10 +56,16 @@ async function initializeTables() {
     } catch (e) {
         if (e.statusCode !== 409) throw e;
     }
+    try {
+        await getUnavailableClient().createTable();
+    } catch (e) {
+        if (e.statusCode !== 409) throw e;
+    }
 }
 
 module.exports = {
     getActivitiesClient,
     getSignupsClient,
+    getUnavailableClient,
     initializeTables
 };

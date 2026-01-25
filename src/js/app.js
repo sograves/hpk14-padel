@@ -89,6 +89,26 @@ const api = {
         return response.json();
     },
 
+    async markUnavailable(activityId, name) {
+        const response = await fetch('/api/unavailable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activityId, name })
+        });
+        if (!response.ok) throw new Error('Failed to mark unavailable');
+        return response.json();
+    },
+
+    async removeUnavailable(activityId, unavailableId) {
+        const response = await fetch('/api/unavailable', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activityId, unavailableId })
+        });
+        if (!response.ok) throw new Error('Failed to remove unavailable');
+        return response.json();
+    },
+
     async updateActivity(id, data) {
         const code = await teamCode.ensure();
         if (!code) throw new Error('Team code required');

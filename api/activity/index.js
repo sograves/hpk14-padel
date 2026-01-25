@@ -1,4 +1,4 @@
-const { getActivitiesClient, getSignupsClient, initializeTables } = require("../shared/database");
+const { getActivitiesClient, getSignupsClient, getUnavailableClient, initializeTables } = require("../shared/database");
 const { requireTeamCode } = require("../shared/auth");
 
 module.exports = async function (context, req) {
@@ -38,6 +38,7 @@ module.exports = async function (context, req) {
 async function getActivity(context, activityId) {
     const activitiesClient = getActivitiesClient();
     const signupsClient = getSignupsClient();
+    const unavailableClient = getUnavailableClient();
 
     let activity;
     try {
@@ -63,6 +64,7 @@ async function getActivity(context, activityId) {
         throw e;
     }
 
+    // Get signups (available)
     const signups = [];
     const signupEntities = signupsClient.listEntities({
         queryOptions: { filter: `PartitionKey eq '${activityId}'` }
@@ -75,13 +77,27 @@ async function getActivity(context, activityId) {
             signedUpAt: entity.signedUpAt
         });
     }
-
     signups.sort((a, b) => new Date(a.signedUpAt) - new Date(b.signedUpAt));
+
+    // Get unavailable
+    const unavailable = [];
+    const unavailableEntities = unavailableClient.listEntities({
+        queryOptions: { filter: `PartitionKey eq '${activityId}'` }
+    });
+
+    for await (const entity of unavailableEntities) {
+        unavailable.push({
+            id: entity.rowKey,
+            name: entity.name,
+            markedAt: entity.markedAt
+        });
+    }
+    unavailable.sort((a, b) => new Date(a.markedAt) - new Date(b.markedAt));
 
     context.res = {
         status: 200,
         headers: { "Content-Type": "application/json" },
-        body: { activity, signups }
+        body: { activity, signups, unavailable }
     };
 }
 
