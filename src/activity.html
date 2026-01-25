@@ -56,20 +56,39 @@
                 </button>
             </div>
 
-            <!-- Signup form -->
+            <!-- Signup/Unsignup forms -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Tilmeld dig</h2>
-                <form id="signup-form" class="flex gap-3">
-                    <input type="text" id="signup-name" required
-                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Dit navn">
-                    <button type="submit" id="signup-btn"
-                        class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-                        Tilmeld
-                    </button>
-                </form>
-                <p id="signup-error" class="hidden text-red-600 text-sm mt-2"></p>
-                <p id="signup-full" class="hidden text-orange-600 text-sm mt-2">Aktiviteten er fuld</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Tilmeld -->
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Tilmeld</h2>
+                        <form id="signup-form" class="flex gap-3">
+                            <input type="text" id="signup-name" required
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Dit navn">
+                            <button type="submit" id="signup-btn"
+                                class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                                Tilmeld
+                            </button>
+                        </form>
+                        <p id="signup-error" class="hidden text-red-600 text-sm mt-2"></p>
+                        <p id="signup-full" class="hidden text-orange-600 text-sm mt-2">Aktiviteten er fuld</p>
+                    </div>
+                    <!-- Afmeld -->
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Afmeld</h2>
+                        <form id="unsignup-form" class="flex gap-3">
+                            <input type="text" id="unsignup-name" required
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                placeholder="Dit navn">
+                            <button type="submit" id="unsignup-btn"
+                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                                Afmeld
+                            </button>
+                        </form>
+                        <p id="unsignup-error" class="hidden text-red-600 text-sm mt-2"></p>
+                    </div>
+                </div>
             </div>
 
             <!-- Signups list -->
@@ -257,6 +276,43 @@
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Tilmeld';
+            }
+        });
+
+        document.getElementById('unsignup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nameInput = document.getElementById('unsignup-name');
+            const submitBtn = document.getElementById('unsignup-btn');
+            const errorEl = document.getElementById('unsignup-error');
+
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            // Find signup by name (case-insensitive)
+            const data = await api.getActivity(currentActivity.id);
+            const signup = data.signups.find(s => s.name.toLowerCase() === name.toLowerCase());
+
+            if (!signup) {
+                errorEl.textContent = 'Navnet blev ikke fundet på listen.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Afmelder...';
+            errorEl.classList.add('hidden');
+
+            try {
+                await api.removeSignup(currentActivity.id, signup.id);
+                nameInput.value = '';
+                await loadActivity(); // Reload to show updated list
+            } catch (error) {
+                errorEl.textContent = 'Kunne ikke afmelde. Prøv igen.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Afmeld';
             }
         });
 
