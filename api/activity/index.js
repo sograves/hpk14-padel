@@ -1,4 +1,5 @@
 const { getActivitiesClient, getSignupsClient, initializeTables } = require("../shared/database");
+const { requireTeamCode } = require("../shared/auth");
 
 module.exports = async function (context, req) {
     try {
@@ -17,8 +18,10 @@ module.exports = async function (context, req) {
         if (req.method === "GET") {
             return await getActivity(context, activityId);
         } else if (req.method === "PUT") {
+            if (!requireTeamCode(context, req)) return;
             return await updateActivity(context, activityId, req);
         } else if (req.method === "DELETE") {
+            if (!requireTeamCode(context, req)) return;
             return await deleteActivity(context, activityId);
         }
 

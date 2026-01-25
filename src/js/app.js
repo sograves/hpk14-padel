@@ -1,5 +1,39 @@
 // HPK 14 Padel Team - Frontend JavaScript
 
+// Team code management
+const teamCode = {
+    STORAGE_KEY: 'hpk14_team_code',
+
+    get() {
+        return localStorage.getItem(this.STORAGE_KEY);
+    },
+
+    set(code) {
+        localStorage.setItem(this.STORAGE_KEY, code);
+    },
+
+    clear() {
+        localStorage.removeItem(this.STORAGE_KEY);
+    },
+
+    async prompt() {
+        const code = prompt('Indtast holdkode for at fortsætte:');
+        if (code) {
+            this.set(code);
+            return code;
+        }
+        return null;
+    },
+
+    async ensure() {
+        let code = this.get();
+        if (!code) {
+            code = await this.prompt();
+        }
+        return code;
+    }
+};
+
 // API Client
 const api = {
     async getActivities() {
@@ -15,11 +49,22 @@ const api = {
     },
 
     async createActivity(data) {
+        const code = await teamCode.ensure();
+        if (!code) throw new Error('Team code required');
+
         const response = await fetch('/api/activities', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Team-Code': code
+            },
             body: JSON.stringify(data)
         });
+
+        if (response.status === 401) {
+            teamCode.clear();
+            throw new Error('Invalid team code');
+        }
         if (!response.ok) throw new Error('Failed to create activity');
         return response.json();
     },
@@ -45,19 +90,41 @@ const api = {
     },
 
     async updateActivity(id, data) {
+        const code = await teamCode.ensure();
+        if (!code) throw new Error('Team code required');
+
         const response = await fetch(`/api/activity?id=${encodeURIComponent(id)}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Team-Code': code
+            },
             body: JSON.stringify(data)
         });
+
+        if (response.status === 401) {
+            teamCode.clear();
+            throw new Error('Invalid team code');
+        }
         if (!response.ok) throw new Error('Failed to update activity');
         return response.json();
     },
 
     async deleteActivity(id) {
+        const code = await teamCode.ensure();
+        if (!code) throw new Error('Team code required');
+
         const response = await fetch(`/api/activity?id=${encodeURIComponent(id)}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-Team-Code': code
+            }
         });
+
+        if (response.status === 401) {
+            teamCode.clear();
+            throw new Error('Invalid team code');
+        }
         if (!response.ok) throw new Error('Failed to delete activity');
         return response.json();
     }

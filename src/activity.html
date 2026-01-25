@@ -313,7 +313,13 @@
                 closeEditModal();
                 await loadActivity();
             } catch (error) {
-                errorEl.textContent = 'Kunne ikke gemme ændringer. Prøv igen.';
+                if (error.message === 'Invalid team code') {
+                    errorEl.textContent = 'Forkert holdkode. Prøv igen.';
+                } else if (error.message === 'Team code required') {
+                    errorEl.textContent = 'Holdkode er påkrævet.';
+                } else {
+                    errorEl.textContent = 'Kunne ikke gemme ændringer. Prøv igen.';
+                }
                 errorEl.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
@@ -330,7 +336,13 @@
                 await api.deleteActivity(currentActivity.id);
                 window.location.href = 'index.html';
             } catch (error) {
-                alert('Kunne ikke slette aktivitet. Prøv igen.');
+                if (error.message === 'Invalid team code') {
+                    alert('Forkert holdkode. Prøv igen.');
+                } else if (error.message === 'Team code required') {
+                    alert('Holdkode er påkrævet.');
+                } else {
+                    alert('Kunne ikke slette aktivitet. Prøv igen.');
+                }
             }
         }
 

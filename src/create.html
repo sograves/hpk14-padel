@@ -110,7 +110,13 @@
                 const activity = await api.createActivity(formData);
                 window.location.href = `activity.html?id=${activity.id}`;
             } catch (error) {
-                errorMsg.textContent = 'Kunne ikke oprette aktivitet. Prøv igen.';
+                if (error.message === 'Invalid team code') {
+                    errorMsg.textContent = 'Forkert holdkode. Prøv igen.';
+                } else if (error.message === 'Team code required') {
+                    errorMsg.textContent = 'Holdkode er påkrævet.';
+                } else {
+                    errorMsg.textContent = 'Kunne ikke oprette aktivitet. Prøv igen.';
+                }
                 errorMsg.classList.remove('hidden');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Opret aktivitet';

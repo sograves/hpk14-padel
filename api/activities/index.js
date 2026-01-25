@@ -1,4 +1,5 @@
 const { getActivitiesClient, getSignupsClient, initializeTables } = require("../shared/database");
+const { requireTeamCode } = require("../shared/auth");
 
 module.exports = async function (context, req) {
     try {
@@ -7,6 +8,7 @@ module.exports = async function (context, req) {
         if (req.method === "GET") {
             return await getActivities(context);
         } else if (req.method === "POST") {
+            if (!requireTeamCode(context, req)) return;
             return await createActivity(context, req);
         }
 
