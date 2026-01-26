@@ -59,9 +59,9 @@
             <!-- Response forms -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <div class="grid md:grid-cols-2 gap-6">
-                    <!-- Kan spille -->
+                    <!-- Tilmeld -->
                     <div>
-                        <h2 class="text-xl font-semibold text-green-700 mb-4">Jeg kan spille</h2>
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">Tilmeld</h2>
                         <form id="signup-form" class="flex gap-3">
                             <input type="text" id="signup-name" required
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -74,9 +74,9 @@
                         <p id="signup-error" class="hidden text-red-600 text-sm mt-2"></p>
                         <p id="signup-full" class="hidden text-orange-600 text-sm mt-2">Aktiviteten er fuld</p>
                     </div>
-                    <!-- Kan ikke spille -->
+                    <!-- Afmeld -->
                     <div>
-                        <h2 class="text-xl font-semibold text-red-700 mb-4">Jeg kan ikke spille</h2>
+                        <h2 class="text-xl font-semibold text-red-700 mb-4">Afmeld</h2>
                         <form id="unavailable-form" class="flex gap-3">
                             <input type="text" id="unavailable-name" required
                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -93,18 +93,18 @@
 
             <!-- Response lists -->
             <div class="grid md:grid-cols-2 gap-6 mb-6">
-                <!-- Kan spille list -->
+                <!-- Tilmeldinger list -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-green-700 mb-4">
-                        Kan spille (<span id="signup-count">0</span>)
+                        Tilmeldinger (<span id="signup-count">0</span>)
                     </h2>
                     <div id="no-signups" class="text-gray-500">Ingen endnu</div>
                     <ul id="signups-list" class="space-y-2 hidden"></ul>
                 </div>
-                <!-- Kan ikke spille list -->
+                <!-- Afmeldinger list -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-red-700 mb-4">
-                        Kan ikke spille (<span id="unavailable-count">0</span>)
+                        Afmeldinger (<span id="unavailable-count">0</span>)
                     </h2>
                     <div id="no-unavailable" class="text-gray-500">Ingen endnu</div>
                     <ul id="unavailable-list" class="space-y-2 hidden"></ul>
