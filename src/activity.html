@@ -448,8 +448,10 @@
             const startDate = new Date(activity.date);
             const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours duration
 
-            const formatICSDate = (date) => {
-                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            // Format date as local time for ICS (YYYYMMDDTHHMMSS)
+            const formatICSDateLocal = (date) => {
+                const pad = (n) => n.toString().padStart(2, '0');
+                return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
             };
 
             const escapeICS = (text) => {
@@ -460,11 +462,13 @@
                 'BEGIN:VCALENDAR',
                 'VERSION:2.0',
                 'PRODID:-//HPK 14//Padel//DA',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH',
                 'BEGIN:VEVENT',
                 `UID:${activity.id}@hpk14.dk`,
-                `DTSTAMP:${formatICSDate(new Date())}`,
-                `DTSTART:${formatICSDate(startDate)}`,
-                `DTEND:${formatICSDate(endDate)}`,
+                `DTSTAMP:${formatICSDateLocal(new Date())}`,
+                `DTSTART:${formatICSDateLocal(startDate)}`,
+                `DTEND:${formatICSDateLocal(endDate)}`,
                 `SUMMARY:${escapeICS(activity.name)} - HPK 14`,
                 `LOCATION:${escapeICS(activity.location)}`,
                 activity.description ? `DESCRIPTION:${escapeICS(activity.description)}` : '',
@@ -472,15 +476,23 @@
                 'END:VCALENDAR'
             ].filter(line => line).join('\r\n');
 
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${activity.name.replace(/[^a-zA-Z0-9æøåÆØÅ ]/g, '')}.ics`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            // Use data URL - works on iOS Safari unlike Blob URLs
+            const dataUrl = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsContent);
+
+            // For iOS, open in same window to trigger calendar import
+            // For other browsers, try download first
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+            if (isIOS) {
+                window.location.href = dataUrl;
+            } else {
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `${activity.name.replace(/[^a-zA-Z0-9æøåÆØÅ ]/g, '')}.ics`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
     </script>
 </body>
