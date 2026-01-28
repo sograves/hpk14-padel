@@ -1,4 +1,4 @@
-const { getActivitiesClient, getSignupsClient, initializeTables } = require("../shared/database");
+const { getActivitiesClient, getSignupsClient, getUnavailableClient, initializeTables } = require("../shared/database");
 const { requireTeamCode } = require("../shared/auth");
 
 module.exports = async function (context, req) {
@@ -25,6 +25,7 @@ module.exports = async function (context, req) {
 async function getActivities(context) {
     const activitiesClient = getActivitiesClient();
     const signupsClient = getSignupsClient();
+    const unavailableClient = getUnavailableClient();
 
     // Get all activities
     const activities = [];
@@ -45,16 +46,25 @@ async function getActivities(context) {
         });
     }
 
-    // Get signup counts for each activity
+    // Get signup and unavailable counts for each activity
     for (const activity of activities) {
-        let count = 0;
+        let signupCount = 0;
         const signups = signupsClient.listEntities({
             queryOptions: { filter: `PartitionKey eq '${activity.id}'` }
         });
         for await (const _ of signups) {
-            count++;
+            signupCount++;
         }
-        activity.signupCount = count;
+        activity.signupCount = signupCount;
+
+        let unavailableCount = 0;
+        const unavailable = unavailableClient.listEntities({
+            queryOptions: { filter: `PartitionKey eq '${activity.id}'` }
+        });
+        for await (const _ of unavailable) {
+            unavailableCount++;
+        }
+        activity.unavailableCount = unavailableCount;
     }
 
     // Sort by date (upcoming first)
