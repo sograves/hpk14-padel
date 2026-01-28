@@ -57,16 +57,26 @@
                 }
 
                 activitiesList.innerHTML = activities.map(activity => {
-                    const isMatchWithTooManyUnavailable = activity.type === 'match' && (activity.unavailableCount || 0) >= 3;
-                    const cardClass = isMatchWithTooManyUnavailable
-                        ? 'block rounded-lg shadow-md hover:shadow-lg transition p-6 bg-orange-50 border-2 border-orange-400'
-                        : 'block bg-white rounded-lg shadow-md hover:shadow-lg transition p-6';
+                    const isMatch = activity.type === 'match';
+                    const isMatchWithTooManyUnavailable = isMatch && (activity.unavailableCount || 0) >= 3;
+                    const isMatchReady = isMatch && (activity.signupCount || 0) >= 6;
+
+                    let cardClass = 'block bg-white rounded-lg shadow-md hover:shadow-lg transition p-6';
+                    if (isMatchWithTooManyUnavailable) {
+                        cardClass = 'block rounded-lg shadow-md hover:shadow-lg transition p-6 bg-orange-50 border-2 border-orange-400';
+                    } else if (isMatchReady) {
+                        cardClass = 'block rounded-lg shadow-md hover:shadow-lg transition p-6 bg-green-50 border-2 border-green-400';
+                    }
 
                     return `
                     <a href="activity.html?id=${activity.id}" class="${cardClass}">
                         ${isMatchWithTooManyUnavailable ? `
                         <div class="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded mb-3 inline-block">
                             Mangler spillere!
+                        </div>
+                        ` : isMatchReady ? `
+                        <div class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded mb-3 inline-block">
+                            Klar til kamp!
                         </div>
                         ` : ''}
                         <div class="flex justify-between items-start mb-2">
