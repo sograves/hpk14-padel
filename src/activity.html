@@ -56,38 +56,25 @@
                 </button>
             </div>
 
-            <!-- Response forms -->
+            <!-- Response form -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- Tilmeld -->
-                    <div>
-                        <h2 class="text-xl font-semibold text-green-700 mb-4">Tilmeld</h2>
-                        <form id="signup-form" class="flex gap-3">
-                            <input type="text" id="signup-name" required
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                placeholder="Dit navn">
-                            <button type="submit" id="signup-btn"
-                                class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-                                Tilmeld
-                            </button>
-                        </form>
-                        <p id="signup-error" class="hidden text-red-600 text-sm mt-2"></p>
-                        <p id="signup-full" class="hidden text-orange-600 text-sm mt-2">Aktiviteten er fuld</p>
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Hvad vil du?</h2>
+                <div class="space-y-4">
+                    <input type="text" id="response-name"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        placeholder="Skriv dit navn">
+                    <div class="flex gap-3">
+                        <button onclick="submitResponse('signup')" id="signup-btn"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2">
+                            <span>Jeg kommer</span>
+                        </button>
+                        <button onclick="submitResponse('unavailable')" id="unavailable-btn"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2">
+                            <span>Jeg kan ikke</span>
+                        </button>
                     </div>
-                    <!-- Afmeld -->
-                    <div>
-                        <h2 class="text-xl font-semibold text-red-700 mb-4">Afmeld</h2>
-                        <form id="unavailable-form" class="flex gap-3">
-                            <input type="text" id="unavailable-name" required
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                placeholder="Dit navn">
-                            <button type="submit" id="unavailable-btn"
-                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-                                Afmeld
-                            </button>
-                        </form>
-                        <p id="unavailable-error" class="hidden text-red-600 text-sm mt-2"></p>
-                    </div>
+                    <p id="response-error" class="hidden text-red-600 text-sm text-center"></p>
+                    <p id="signup-full" class="hidden text-orange-600 text-sm text-center">Aktiviteten er fuld - du kan ikke tilmelde dig</p>
                 </div>
             </div>
 
@@ -231,18 +218,26 @@
             renderUnavailable(unavailable);
         }
 
+        let isActivityFull = false;
+
         function renderSignups(signups, maxParticipants) {
             const countEl = document.getElementById('signup-count');
             const noSignups = document.getElementById('no-signups');
             const signupsList = document.getElementById('signups-list');
             const signupFull = document.getElementById('signup-full');
-            const signupForm = document.getElementById('signup-form');
+            const signupBtn = document.getElementById('signup-btn');
 
             countEl.textContent = signups.length;
 
-            if (maxParticipants && signups.length >= parseInt(maxParticipants)) {
+            isActivityFull = maxParticipants && signups.length >= parseInt(maxParticipants);
+            if (isActivityFull) {
                 signupFull.classList.remove('hidden');
-                signupForm.classList.add('hidden');
+                signupBtn.disabled = true;
+                signupBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                signupFull.classList.add('hidden');
+                signupBtn.disabled = false;
+                signupBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
 
             if (signups.length === 0) {
@@ -263,33 +258,6 @@
                 </li>
             `).join('');
         }
-
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const nameInput = document.getElementById('signup-name');
-            const submitBtn = document.getElementById('signup-btn');
-            const errorEl = document.getElementById('signup-error');
-
-            const name = nameInput.value.trim();
-            if (!name) return;
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Tilmelder...';
-            errorEl.classList.add('hidden');
-
-            try {
-                await api.signup(currentActivity.id, name);
-                nameInput.value = '';
-                await loadActivity(); // Reload to show updated list
-            } catch (error) {
-                errorEl.textContent = 'Kunne ikke tilmelde. Prøv igen.';
-                errorEl.classList.remove('hidden');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Tilmeld';
-            }
-        });
 
         function renderUnavailable(unavailable) {
             const countEl = document.getElementById('unavailable-count');
@@ -317,30 +285,59 @@
             `).join('');
         }
 
-        document.getElementById('unavailable-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const nameInput = document.getElementById('unavailable-name');
-            const submitBtn = document.getElementById('unavailable-btn');
-            const errorEl = document.getElementById('unavailable-error');
+        async function submitResponse(type) {
+            const nameInput = document.getElementById('response-name');
+            const signupBtn = document.getElementById('signup-btn');
+            const unavailableBtn = document.getElementById('unavailable-btn');
+            const errorEl = document.getElementById('response-error');
 
             const name = nameInput.value.trim();
-            if (!name) return;
+            if (!name) {
+                errorEl.textContent = 'Skriv dit navn først';
+                errorEl.classList.remove('hidden');
+                nameInput.focus();
+                return;
+            }
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Afmelder...';
+            if (type === 'signup' && isActivityFull) {
+                return;
+            }
+
+            const btn = type === 'signup' ? signupBtn : unavailableBtn;
+            const originalText = btn.querySelector('span').textContent;
+
+            signupBtn.disabled = true;
+            unavailableBtn.disabled = true;
+            btn.querySelector('span').textContent = type === 'signup' ? 'Tilmelder...' : 'Afmelder...';
             errorEl.classList.add('hidden');
 
             try {
-                await api.markUnavailable(currentActivity.id, name);
+                if (type === 'signup') {
+                    await api.signup(currentActivity.id, name);
+                } else {
+                    await api.markUnavailable(currentActivity.id, name);
+                }
                 nameInput.value = '';
                 await loadActivity();
             } catch (error) {
-                errorEl.textContent = 'Kunne ikke afmelde. Prøv igen.';
+                errorEl.textContent = type === 'signup'
+                    ? 'Kunne ikke tilmelde. Prøv igen.'
+                    : 'Kunne ikke afmelde. Prøv igen.';
                 errorEl.classList.remove('hidden');
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Afmeld';
+                signupBtn.disabled = isActivityFull;
+                unavailableBtn.disabled = false;
+                btn.querySelector('span').textContent = originalText;
+            }
+        }
+
+        // Allow Enter key to submit as signup
+        document.getElementById('response-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!isActivityFull) {
+                    submitResponse('signup');
+                }
             }
         });
 
