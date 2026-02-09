@@ -8,6 +8,8 @@ module.exports = async function (context, req) {
             return await addSignup(context, req);
         } else if (req.method === "DELETE") {
             return await removeSignup(context, req);
+        } else if (req.method === "PUT") {
+            return await updateSignupStatus(context, req);
         }
 
         context.res = { status: 405, body: "Method not allowed" };
@@ -105,6 +107,65 @@ async function removeSignup(context, req) {
             status: 200,
             headers: { "Content-Type": "application/json" },
             body: { success: true }
+        };
+    } catch (e) {
+        if (e.statusCode === 404) {
+            context.res = {
+                status: 404,
+                body: { error: "Signup not found" }
+            };
+            return;
+        }
+        throw e;
+    }
+}
+
+async function updateSignupStatus(context, req) {
+    const { activityId, signupId, status } = req.body || {};
+
+    if (!activityId || !signupId) {
+        context.res = {
+            status: 400,
+            body: { error: "Missing required fields: activityId, signupId" }
+        };
+        return;
+    }
+
+    // Validate status value
+    const validStatuses = [null, "playing", "standby"];
+    if (status !== undefined && !validStatuses.includes(status)) {
+        context.res = {
+            status: 400,
+            body: { error: "Invalid status. Must be null, 'playing', or 'standby'" }
+        };
+        return;
+    }
+
+    const signupsClient = getSignupsClient();
+
+    try {
+        // Get existing signup
+        const existing = await signupsClient.getEntity(activityId, signupId);
+
+        // Update with new status
+        const updatedEntity = {
+            partitionKey: activityId,
+            rowKey: signupId,
+            name: existing.name,
+            signedUpAt: existing.signedUpAt,
+            status: status || null
+        };
+
+        await signupsClient.updateEntity(updatedEntity, "Replace");
+
+        context.res = {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+            body: {
+                id: signupId,
+                name: existing.name,
+                status: status || null
+            }
         };
     } catch (e) {
         if (e.statusCode === 404) {

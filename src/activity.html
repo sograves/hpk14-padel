@@ -249,12 +249,24 @@
             noSignups.classList.add('hidden');
             signupsList.classList.remove('hidden');
             signupsList.innerHTML = signups.map(signup => `
-                <li class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span class="font-medium">${escapeHtml(signup.name)}</span>
-                    <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
-                        class="text-gray-600 hover:text-gray-800 text-sm">
-                        Fjern
-                    </button>
+                <li class="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">${escapeHtml(signup.name)}</span>
+                        <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
+                            class="text-gray-600 hover:text-gray-800 text-sm">
+                            Fjern
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="updateStatus('${signup.id}', '${signup.status === 'playing' ? '' : 'playing'}')"
+                            class="flex-1 text-xs py-1 px-2 rounded ${signup.status === 'playing' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-green-100'}">
+                            Playing
+                        </button>
+                        <button onclick="updateStatus('${signup.id}', '${signup.status === 'standby' ? '' : 'standby'}')"
+                            class="flex-1 text-xs py-1 px-2 rounded ${signup.status === 'standby' ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-yellow-100'}">
+                            Standby
+                        </button>
+                    </div>
                 </li>
             `).join('');
         }
@@ -364,6 +376,15 @@
                 await loadActivity();
             } catch (error) {
                 alert('Kunne ikke fjerne fra listen. Prøv igen.');
+            }
+        }
+
+        async function updateStatus(signupId, status) {
+            try {
+                await api.updateSignupStatus(currentActivity.id, signupId, status || null);
+                await loadActivity();
+            } catch (error) {
+                alert('Kunne ikke opdatere status. Prøv igen.');
             }
         }
 

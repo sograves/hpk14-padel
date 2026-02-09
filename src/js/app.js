@@ -89,6 +89,16 @@ const api = {
         return response.json();
     },
 
+    async updateSignupStatus(activityId, signupId, status) {
+        const response = await fetch('/api/signup', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activityId, signupId, status })
+        });
+        if (!response.ok) throw new Error('Failed to update signup status');
+        return response.json();
+    },
+
     async markUnavailable(activityId, name) {
         const response = await fetch('/api/unavailable', {
             method: 'POST',
