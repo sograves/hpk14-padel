@@ -74,7 +74,8 @@ async function getActivity(context, activityId) {
         signups.push({
             id: entity.rowKey,
             name: entity.name,
-            signedUpAt: entity.signedUpAt
+            signedUpAt: entity.signedUpAt,
+            status: entity.status || null
         });
     }
     signups.sort((a, b) => new Date(a.signedUpAt) - new Date(b.signedUpAt));
