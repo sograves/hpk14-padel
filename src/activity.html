@@ -275,19 +275,19 @@
             signupsList.classList.remove('hidden');
             signupsList.innerHTML = signups.map(signup => {
                 let statusClass = 'bg-gray-50';
-                let statusBadge = '';
+                let statusLabel = '';
                 if (signup.status === 'playing') {
                     statusClass = 'bg-green-50 border-2 border-green-500';
-                    statusBadge = '<span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded">Playing</span>';
+                    statusLabel = '<span class="text-xs text-green-600 font-semibold">Playing</span>';
                 } else if (signup.status === 'standby') {
                     statusClass = 'bg-orange-50 border-2 border-orange-400';
-                    statusBadge = '<span class="text-xs bg-orange-400 text-white px-2 py-0.5 rounded">Standby</span>';
+                    statusLabel = '<span class="text-xs text-orange-500 font-semibold">Standby</span>';
                 }
                 return `
                 <li class="flex justify-between items-center p-3 rounded-lg ${statusClass}">
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-col">
+                        ${statusLabel}
                         <span class="font-medium">${escapeHtml(signup.name)}</span>
-                        ${statusBadge}
                     </div>
                     <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
                         class="text-gray-600 hover:text-gray-800 text-sm">
@@ -418,6 +418,13 @@
         }
 
         function openTeamModal() {
+            const password = prompt('Indtast adgangskode:');
+            if (password !== 'lillemartin') {
+                if (password !== null) {
+                    alert('Forkert adgangskode');
+                }
+                return;
+            }
             const modal = document.getElementById('team-modal');
             renderTeamList();
             modal.classList.remove('hidden');
