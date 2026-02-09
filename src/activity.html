@@ -82,9 +82,14 @@
             <div class="grid md:grid-cols-2 gap-6 mb-6">
                 <!-- Tilmeldinger list -->
                 <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-semibold text-green-700 mb-4">
-                        Tilmeldinger (<span id="signup-count">0</span>)
-                    </h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-green-700">
+                            Tilmeldinger (<span id="signup-count">0</span>)
+                        </h2>
+                        <button onclick="openTeamModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1 px-3 rounded-lg transition">
+                            Sæt holdet
+                        </button>
+                    </div>
                     <div id="no-signups" class="text-gray-500">Ingen endnu</div>
                     <ul id="signups-list" class="space-y-2 hidden"></ul>
                 </div>
@@ -158,6 +163,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Team Selection Modal -->
+        <div id="team-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Sæt holdet</h2>
+                        <button onclick="closeTeamModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Vælg status for hver spiller</p>
+                    <div id="team-list" class="space-y-3"></div>
+                    <div class="mt-6">
+                        <button onclick="closeTeamModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                            Færdig
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="js/app.js"></script>
@@ -221,6 +245,7 @@
         let isActivityFull = false;
 
         function renderSignups(signups, maxParticipants) {
+            currentSignups = signups;
             const countEl = document.getElementById('signup-count');
             const noSignups = document.getElementById('no-signups');
             const signupsList = document.getElementById('signups-list');
@@ -248,27 +273,28 @@
 
             noSignups.classList.add('hidden');
             signupsList.classList.remove('hidden');
-            signupsList.innerHTML = signups.map(signup => `
-                <li class="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg">
-                    <div class="flex justify-between items-center">
+            signupsList.innerHTML = signups.map(signup => {
+                let statusClass = 'bg-gray-50';
+                let statusBadge = '';
+                if (signup.status === 'playing') {
+                    statusClass = 'bg-green-50 border-2 border-green-500';
+                    statusBadge = '<span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded">Playing</span>';
+                } else if (signup.status === 'standby') {
+                    statusClass = 'bg-orange-50 border-2 border-orange-400';
+                    statusBadge = '<span class="text-xs bg-orange-400 text-white px-2 py-0.5 rounded">Standby</span>';
+                }
+                return `
+                <li class="flex justify-between items-center p-3 rounded-lg ${statusClass}">
+                    <div class="flex items-center gap-2">
                         <span class="font-medium">${escapeHtml(signup.name)}</span>
-                        <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
-                            class="text-gray-600 hover:text-gray-800 text-sm">
-                            Fjern
-                        </button>
+                        ${statusBadge}
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="updateStatus('${signup.id}', '${signup.status === 'playing' ? '' : 'playing'}')"
-                            class="flex-1 text-xs py-1 px-2 rounded ${signup.status === 'playing' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-green-100'}">
-                            Playing
-                        </button>
-                        <button onclick="updateStatus('${signup.id}', '${signup.status === 'standby' ? '' : 'standby'}')"
-                            class="flex-1 text-xs py-1 px-2 rounded ${signup.status === 'standby' ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-yellow-100'}">
-                            Standby
-                        </button>
-                    </div>
+                    <button onclick="removeSignup('${signup.id}', '${escapeHtml(signup.name)}')"
+                        class="text-gray-600 hover:text-gray-800 text-sm">
+                        Fjern
+                    </button>
                 </li>
-            `).join('');
+            `}).join('');
         }
 
         function renderUnavailable(unavailable) {
@@ -379,13 +405,45 @@
             }
         }
 
+        let currentSignups = [];
+
         async function updateStatus(signupId, status) {
             try {
                 await api.updateSignupStatus(currentActivity.id, signupId, status || null);
                 await loadActivity();
+                renderTeamList();
             } catch (error) {
                 alert('Kunne ikke opdatere status. Prøv igen.');
             }
+        }
+
+        function openTeamModal() {
+            const modal = document.getElementById('team-modal');
+            renderTeamList();
+            modal.classList.remove('hidden');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('team-modal').classList.add('hidden');
+        }
+
+        function renderTeamList() {
+            const teamList = document.getElementById('team-list');
+            teamList.innerHTML = currentSignups.map(signup => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span class="font-medium">${escapeHtml(signup.name)}</span>
+                    <div class="flex gap-2">
+                        <button onclick="updateStatus('${signup.id}', '${signup.status === 'playing' ? '' : 'playing'}')"
+                            class="text-sm py-1 px-3 rounded ${signup.status === 'playing' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-green-100'}">
+                            Playing
+                        </button>
+                        <button onclick="updateStatus('${signup.id}', '${signup.status === 'standby' ? '' : 'standby'}')"
+                            class="text-sm py-1 px-3 rounded ${signup.status === 'standby' ? 'bg-orange-400 text-white' : 'bg-gray-200 text-gray-700 hover:bg-orange-100'}">
+                            Standby
+                        </button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function openEditModal() {
