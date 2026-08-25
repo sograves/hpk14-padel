@@ -23,13 +23,13 @@
     </header>
 
     <main class="container mx-auto px-4 py-8">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <h2 class="text-2xl font-semibold text-gray-800">Aktiviteter</h2>
             <div class="flex gap-2">
-                <button onclick="openRankedInModal()" class="bg-white hover:bg-gray-50 text-blue-600 font-semibold py-2 px-4 rounded-lg border border-blue-600 transition">
+                <button onclick="openRankedInModal()" class="flex-1 sm:flex-none whitespace-nowrap bg-white hover:bg-gray-50 text-blue-600 font-semibold py-2 px-4 rounded-lg border border-blue-600 transition">
                     RankedIn
                 </button>
-                <a href="create.html" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                <a href="create.html" class="flex-1 sm:flex-none whitespace-nowrap text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
                     + Opret aktivitet
                 </a>
             </div>
