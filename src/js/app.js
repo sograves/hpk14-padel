@@ -1,5 +1,13 @@
 // HPK 14 Padel Team - Frontend JavaScript
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+            console.error('Service worker registration failed:', error);
+        });
+    });
+}
+
 // Team code management
 const teamCode = {
     STORAGE_KEY: 'hpk14_team_code',
